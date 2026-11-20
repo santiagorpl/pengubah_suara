@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuaraNusa AI - Text to Speech Indonesia</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- LameJS untuk Encoding MP3 Asli di Browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        /* Kustomisasi scrollbar untuk textarea panjang */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.6);
+            border-radius: 8px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.8);
+        }
+
+        /* Animasi gelombang suara */
+        @keyframes soundwave {
+            0%, 100% { height: 6px; }
+            50% { height: 24px; }
+        }
+        .wave-bar {
+            animation: soundwave 1s ease-in-out infinite;
+        }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Navbar -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                    <i data-lucide="mic" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight text-white">SuaraNusa <span class="text-brand-500">AI</span></h1>
+                    <p class="text-xs text-slate-400">Studio Text-to-Speech Bahasa Indonesia</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Sistem Siap
+                </span>
+
+                <!-- Menu Akun di Pojok Kanan -->
+                <div class="relative" id="account-menu-wrapper">
+                    <button
+                        type="button"
+                        id="btn-account-menu"
+                        onclick="toggleAccountMenu(event)"
+                        aria-expanded="false"
+                        aria-haspopup="true"
+                        class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/90 hover:border-slate-600 transition-all text-left shadow-sm"
+                    >
+                        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500 to-brand-500 text-white font-semibold text-xs flex items-center justify-center flex-shrink-0">
+                            S
+                        </div>
+                        <div class="hidden md:block leading-tight">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-semibold text-white">Santiago</span>
+                                <span class="px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                    plajaj
+                                </span>
+                            </div>
+                            <span class="block text-[11px] text-slate-400 truncate max-w-[150px]">agokrip131009@gmail.com</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                    </button>
+
+                    <!-- Dropdown Menu Akun -> Masuk ke Menu Developer -->
+                    <div
+                        id="account-dropdown"
+                        class="hidden absolute right-0 mt-2 w-72 rounded-2xl bg-slate-900 border border-slate-700/90 shadow-2xl p-2 z-40"
+                    >
+                        <div class="px-3 py-2.5 border-b border-slate-800">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-xs font-semibold text-white truncate">Santiago</p>
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                    plajaj
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 truncate mt-0.5">agokrip131009@gmail.com</p>
+                        </div>
+
+                        <div class="pt-1.5">
+                            <button
+                                type="button"
+                                onclick="openDeveloperMenu()"
+                                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-slate-200 hover:bg-brand-600/20 hover:text-brand-300 transition-colors"
+                            >
+                                <span class="flex items-center gap-2.5">
+                                    <i data-lucide="code-2" class="w-4 h-4 text-brand-400"></i>
+                                    <span>Menu Developer</span>
+                                </span>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Modal / Panel Menu Developer -->
+    <div
+        id="developer-modal"
+        class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
+        onclick="handleDeveloperBackdropClick(event)"
+    >
+        <div class="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-brand-600/20 border border-brand-500/30 flex items-center justify-center">
+                        <i data-lucide="terminal" class="w-4 h-4 text-brand-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-semibold text-white">Menu Developer</h2>
+                        <p class="text-[11px] text-slate-400">Santiago • agokrip131009@gmail.com</p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onclick="closeDeveloperMenu()"
+                    aria-label="Tutup Menu Developer"
+                    class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4 text-xs">
+                <div class="rounded-xl bg-slate-950 border border-slate-800 p-4 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Nama Akun</span>
+                        <span class="font-semibold text-white">Santiago</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Email</span>
+                        <span class="font-mono text-slate-200">agokrip131009@gmail.com</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Status</span>
+                        <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold">
+                            plajaj
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Model TTS</span>
+                        <span class="font-mono text-brand-400">gemini-2.5-flash-preview-tts</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="dev-api-key-input" class="block font-medium text-slate-300 mb-1.5">
+                        Gemini API Key (Tersimpan Lokal)
+                    </label>
+                    <div class="flex gap-2">
+                        <input
+                            type="password"
+                            id="dev-api-key-input"
+                            placeholder="Masukkan Gemini API Key..."
+                            oninput="syncApiKeyFromDev(this.value)"
+                            class="flex-1 bg-slate-950 border border-slate-700 focus:border-brand-500 rounded-xl px-3.5 py-2 text-slate-100 placeholder-slate-600 focus:outline-none"
+                        >
+                        <button
+                            type="button"
+                            onclick="clearSavedApiKey(); syncApiKeyToDev();"
+                            class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <button
+                        type="button"
+                        onclick="copyDevDebugInfo()"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition-colors"
+                    >
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Salin Info Debug</span>
+                    </button>
+                    <button
+                        type="button"
+                        onclick="closeDeveloperMenu()"
+                        class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition-colors"
+                    >
+                        Selesai
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Notifikasi / Message Box (Pengganti alert) -->
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Kolom Kiri: Pengaturan Suara (5 Kolom di Desktop) -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <div class="flex items-center gap-2 mb-6 pb-4 border-b border-slate-800">
+                        <i data-lucide="sliders" class="w-5 h-5 text-brand-500"></i>
+                        <h2 class="font-semibold text-base text-white">Konfigurasi Karakter Suara</h2>
+                    </div>
+
+                    <div class="space-y-5">
+                        <!-- 1. Dropdown Pilihan Bahasa -->
+                        <div>
+                            <label for="language-select" class="block text-sm font-medium text-slate-300 mb-2">
+                                Pilih Bahasa & Dialek
+                            </label>
+                            <div class="relative">
+                                <select id="language-select" class="w-full appearance-none bg-slate-950 border border-slate-700 hover:border-slate-600 text-slate-100 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all">
+                                    <option value="id-ID" selected>🇮🇩 Bahasa Indonesia (Standar / Baku)</option>
+                                    <option value="id-ID-jaksel">🇮🇩 Bahasa Indonesia (Kasual / Modern)</option>
+                                    <option value="id-ID-formal">🇮🇩 Bahasa Indonesia (Formal / Berita)</option>
+                                    <option value="ms-MY">🇲🇾 Bahasa Melayu</option>
+                                    <option value="en-US">🇺🇸 Bahasa Inggris (US - Aksen Lokal)</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <!-- 2. Pilihan Jenis Kelamin (Pria / Wanita) -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">
+                                Jenis Kelamin Karakter
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button type="button" id="btn-gender-female" onclick="selectGender('female')" class="gender-btn active flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-medium transition-all bg-brand-600/20 border-brand-500 text-brand-400">
+                                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                                    Wanita
+                                </button>
+                                <button type="button" id="btn-gender-male" onclick="selectGender('male')" class="gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-sm font-medium transition-all">
+                                    <i data-lucide="user" class="w-4 h-4"></i>
+                                    Pria
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 3. Tipe Suara Sesuai Jenis Kelamin -->
+                        <div>
+                            <label for="voice-type-select" class="block text-sm font-medium text-slate-300 mb-2">
+                                Tipe Karakter Suara
+                            </label>
+                            <div class="relative">
+                                <select id="voice-type-select" class="w-full appearance-none bg-slate-950 border border-slate-700 hover:border-slate-600 text-slate-100 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all">
+                                    <!-- Diisi secara dinamis oleh JavaScript berdasarkan gender -->
+                                </select>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none"></i>
+                            </div>
+                            <p id="voice-desc" class="mt-2 text-xs text-slate-400 italic">
+                                Memuat deskripsi karakter suara...
+                            </p>
+                        </div>
+
+                        <!-- 4. Pilihan Emosi / Vibe -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">
+                                Emosi & Vibe Penyampaian
+                            </label>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="emotion-grid">
+                                <button type="button" data-emotion="netral" onclick="selectEmotion('netral')" class="emotion-btn active flex flex-col items-center justify-center p-3 rounded-xl border border-brand-500 bg-brand-600/20 text-brand-300 text-xs font-medium transition-all">
+                                    <span class="text-lg mb-1">😐</span>
+                                    Netral
+                                </button>
+                                <button type="button" data-emotion="ceria" onclick="selectEmotion('ceria')" class="emotion-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-xs font-medium transition-all">
+                                    <span class="text-lg mb-1">😄</span>
+                                    Ceria
+                                </button>
+                                <button type="button" data-emotion="sedih" onclick="selectEmotion('sedih')" class="emotion-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-xs font-medium transition-all">
+                                    <span class="text-lg mb-1">😢</span>
+                                    Sedih
+                                </button>
+                                <button type="button" data-emotion="puitis" onclick="selectEmotion('puitis')" class="emotion-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-xs font-medium transition-all">
+                                    <span class="text-lg mb-1">📜</span>
+                                    Puitis
+                                </button>
+                                <button type="button" data-emotion="berwibawa" onclick="selectEmotion('berwibawa')" class="emotion-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-xs font-medium transition-all">
+                                    <span class="text-lg mb-1">🎙️</span>
+                                    Tegas
+                                </button>
+                                <button type="button" data-emotion="berbisik" onclick="selectEmotion('berbisik')" class="emotion-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-xs font-medium transition-all">
+                                    <span class="text-lg mb-1">🤫</span>
+                                    Lembut
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Kontrol Tambahan (Kecepatan) -->
+                        <div class="pt-2 border-t border-slate-800">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label for="speed-range" class="text-xs font-medium text-slate-400">Kecepatan Bicara</label>
+                                <span id="speed-value" class="text-xs font-semibold text-brand-400">1.0x (Normal)</span>
+                            </div>
+                            <input type="range" id="speed-range" min="0.6" max="1.5" step="0.1" value="1.0" class="w-full accent-brand-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                        </div>
+
+                        <!-- API Key Opsional (Untuk deploy mandiri seperti GitHub Pages) -->
+                        <div class="pt-3 border-t border-slate-800">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label for="api-key-input" class="text-xs font-medium text-slate-400">
+                                    Gemini API Key <span class="text-slate-500">(Opsional / GitHub)</span>
+                                </label>
+                                <button type="button" onclick="clearSavedApiKey()" class="text-[11px] text-slate-500 hover:text-slate-300 transition-colors">
+                                    Hapus
+                                </button>
+                            </div>
+                            <input
+                                type="password"
+                                id="api-key-input"
+                                placeholder="Kosongkan jika berjalan di Preview editor..."
+                                class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 text-slate-200 placeholder-slate-600 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+                            >
+                            <p class="mt-1.5 text-[11px] text-slate-500">
+                                Disimpan lokal di browser Anda (localStorage). Jangan bagikan halaman jika API key diisi.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Area Narasi & Pemutar Audio (7 Kolom di Desktop) -->
+            <div class="lg:col-span-7 flex flex-col space-y-6">
+                
+                <!-- Kartu Input Teks Tanpa Batas -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-grow flex flex-col">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-brand-500"></i>
+                            <h2 class="font-semibold text-base text-white">Naskah Narasi</h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="insertSampleText()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1.5">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+                                Contoh Teks
+                            </button>
+                            <button type="button" onclick="clearText()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-red-950/60 hover:text-red-400 text-slate-400 transition-colors flex items-center gap-1.5">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Textarea Tanpa Batas Karakter (No maxlength) -->
+                    <div class="relative flex-grow flex flex-col">
+                        <textarea 
+                            id="narration-input" 
+                            rows="10"
+                            placeholder="Ketik atau tempelkan naskah narasi Anda di sini tanpa batas karakter... Anda dapat menulis cerita panjang, artikel, naskah video, maupun puisi dalam Bahasa Indonesia."
+                            class="w-full flex-grow bg-slate-950 border border-slate-700 focus:border-brand-500 rounded-xl p-4 text-slate-100 placeholder-slate-500 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-500/30 resize-y transition-all"
+                        ></textarea>
+                        
+                        <!-- Bar Informasi Karakter (Tanpa Batas) -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 mt-3 text-xs text-slate-400">
+                            <div class="flex items-center gap-4">
+                                <span><strong id="char-count" class="text-slate-200">0</strong> Karakter</span>
+                                <span><strong id="word-count" class="text-slate-200">0</strong> Kata</span>
+                                <span>Estimasi Durasi: <strong id="est-duration" class="text-slate-200">0 dtk</strong></span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                                <i data-lucide="infinity" class="w-3.5 h-3.5"></i>
+                                Tanpa Batas Karakter
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Generate Utama -->
+                    <div class="mt-6 pt-5 border-t border-slate-800 flex flex-col sm:flex-row gap-3">
+                        <button type="button" id="btn-generate" onclick="generateSpeech()" class="flex-1 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2.5 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i data-lucide="play-circle" class="w-5 h-5" id="generate-icon"></i>
+                            <span id="generate-text">Buat & Putar Suara</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kartu Output Audio & Download MP3 -->
+                <div id="audio-output-card" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl transition-all">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="volume-2" class="w-5 h-5 text-emerald-400"></i>
+                            <h3 class="font-semibold text-base text-white">Hasil Output Audio</h3>
+                        </div>
+                        <span id="audio-status-badge" class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-400">
+                            Menunggu Naskah
+                        </span>
+                    </div>
+
+                    <!-- Pemutar Audio Custom & Visualisasi -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-4">
+                        <div class="flex items-center gap-4">
+                            <!-- Tombol Play/Pause Audio Hasil -->
+                            <button type="button" id="btn-play-pause" onclick="toggleAudioPlayback()" disabled class="w-12 h-12 rounded-full bg-brand-600 hover:bg-brand-500 disabled:bg-slate-800 disabled:text-slate-600 text-white flex items-center justify-center flex-shrink-0 transition-all shadow-md">
+                                <i data-lucide="play" class="w-5 h-5 ml-0.5" id="play-pause-icon"></i>
+                            </button>
+
+                            <!-- Visualisasi & Info Trek -->
+                            <div class="flex-grow min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <p id="track-title" class="text-sm font-medium text-slate-200 truncate">Belum ada audio yang dibuat</p>
+                                    <span id="audio-time" class="text-xs font-mono text-slate-400">00:00 / 00:00</span>
+                                </div>
+                                
+                                <!-- Progress Bar -->
+                                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden cursor-pointer" id="progress-container" onclick="seekAudio(event)">
+                                    <div id="progress-bar" class="bg-brand-500 h-full w-0 transition-all duration-100"></div>
+                                </div>
+                            </div>
+
+                            <!-- Animasi Gelombang saat diputar -->
+                            <div id="visualizer" class="hidden sm:flex items-end gap-1 h-6 w-8 justify-center opacity-30">
+                                <div class="w-1 bg-brand-400 rounded-full h-2"></div>
+                                <div class="w-1 bg-brand-400 rounded-full h-4"></div>
+                                <div class="w-1 bg-brand-400 rounded-full h-3"></div>
+                                <div class="w-1 bg-brand-400 rounded-full h-5"></div>
+                            </div>
+                        </div>
+
+                        <!-- Elemen Audio Tersembunyi -->
+                        <audio id="audio-player" class="hidden" playsinline></audio>
+
+                        <!-- Tombol Unduh MP3 ke Penyimpanan Internal -->
+                        <div class="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <p class="text-xs text-slate-400 flex items-center gap-1.5">
+                                <i data-lucide="hard-drive-download" class="w-4 h-4 text-slate-500"></i>
+                                Format: <strong class="text-slate-300">MP3 (128 kbps)</strong> • Siap disimpan ke perangkat
+                            </p>
+                            
+                            <button type="button" id="btn-download-mp3" onclick="downloadAsMp3()" disabled class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium text-sm py-2.5 px-5 rounded-xl shadow-lg shadow-emerald-600/20 disabled:shadow-none flex items-center justify-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Unduh MP3</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+        <p>SuaraNusa AI &copy; 2026 — Teknologi Sintesis Suara Bahasa Indonesia dengan Ekspor MP3 Langsung.</p>
+    </footer>
+
+    <!-- Logika Aplikasi -->
+    <script>
+        // Helper aman untuk merender ikon Lucide tanpa menghentikan script jika CDN lambat
+        function renderIcons() {
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        }
+        renderIcons();
+
+        // Konfigurasi Database Karakter Suara berdasarkan Jenis Kelamin
+        const voiceProfiles = {
+            female: [
+                {
+                    id: 'id-female-lembut',
+                    name: 'Ayu — Lembut & Ramah (Narator)',
+                    geminiVoice: 'Aoede', // Suara wanita hangat & alami
+                    desc: 'Cocok untuk cerita, buku audio, edukasi, dan layanan pelanggan yang menenangkan.'
+                },
+                {
+                    id: 'id-female-ceria',
+                    name: 'Tari — Ceria & Energik (Konten Kreator)',
+                    geminiVoice: 'Kore', // Suara wanita cerah dan bersemangat
+                    desc: 'Sangat pas untuk video TikTok, Reels, iklan produk, dan konten hiburan.'
+                },
+                {
+                    id: 'id-female-berita',
+                    name: 'Nadia — Profesional & Tegas (Penyiar Berita)',
+                    geminiVoice: 'Zephyr', // Suara wanita jernih dan formal
+                    desc: 'Ideal untuk presentasi bisnis, berita resmi, dokumenter, dan pengumuman.'
+                },
+                {
+                    id: 'id-female-puitis',
+                    name: 'Kirana — Melankolis & Puitis (Sastra)',
+                    geminiVoice: 'Leda', // Suara wanita ekspresif dan mendalam
+                    desc: 'Dirancang khusus untuk pembacaan puisi, monolog drama, dan kisah menyentuh hati.'
+                }
+            ],
+            male: [
+                {
+                    id: 'id-male-wibawa',
+                    name: 'Bima — Berat & Berwibawa (Dokumenter)',
+                    geminiVoice: 'Charon', // Suara pria dalam dan berwibawa
+                    desc: 'Sangat cocok untuk narasi dokumenter, trailer film, profil perusahaan, dan pidato.'
+                },
+                {
+                    id: 'id-male-santai',
+                    name: 'Raka — Santai & Bersahabat (Podcast)',
+                    geminiVoice: 'Puck', // Suara pria kasual dan ramah
+                    desc: 'Pas untuk obrolan podcast, tutorial YouTube, dan konten media sosial kasual.'
+                },
+                {
+                    id: 'id-male-energik',
+                    name: 'Dimas — Dinamis & Antusias (Presenter)',
+                    geminiVoice: 'Fenrir', // Suara pria bertenaga
+                    desc: 'Ideal untuk promosi acara, ulasan teknologi, dan konten olahraga.'
+                },
+                {
+                    id: 'id-male-bijak',
+                    name: 'Arif — Tenang & Bijaksana (Storyteller)',
+                    geminiVoice: 'Orus', // Suara pria matang dan tenang
+                    desc: 'Cocok untuk dongeng, renungan malam, meditasi, dan pembacaan puisi.'
+                }
+            ]
+        };
+
+        // State Aplikasi
+        let currentGender = 'female';
+        let currentEmotion = 'netral';
+        let currentAudioBlob = null;
+        let currentAudioUrl = null;
+        let currentAudioExt = 'mp3';
+        let currentPcm16 = null;
+        let currentSampleRate = 24000;
+        let audioCtx = null;
+        let webAudioSource = null;
+        let isPlayingWebAudio = false;
+        let isGenerating = false;
+
+        // Referensi Elemen DOM
+        const narrationInput = document.getElementById('narration-input');
+        const charCountEl = document.getElementById('char-count');
+        const wordCountEl = document.getElementById('word-count');
+        const estDurationEl = document.getElementById('est-duration');
+        const voiceTypeSelect = document.getElementById('voice-type-select');
+        const voiceDescEl = document.getElementById('voice-desc');
+        const speedRange = document.getElementById('speed-range');
+        const speedValue = document.getElementById('speed-value');
+        const audioPlayer = document.getElementById('audio-player');
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const btnDownloadMp3 = document.getElementById('btn-download-mp3');
+        const progressBar = document.getElementById('progress-bar');
+        const audioTimeEl = document.getElementById('audio-time');
+        const visualizer = document.getElementById('visualizer');
+        const apiKeyInput = document.getElementById('api-key-input');
+
+        // Helper mengambil API Key dari input/localStorage atau fallback runtime kosong
+        function getEffectiveApiKey() {
+            const typedKey = apiKeyInput ? apiKeyInput.value.trim() : '';
+            if (typedKey) return typedKey;
+            try {
+                return localStorage.getItem('suaranusa_gemini_api_key') || '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function clearSavedApiKey() {
+            if (apiKeyInput) apiKeyInput.value = '';
+            const devKeyInput = document.getElementById('dev-api-key-input');
+            if (devKeyInput) devKeyInput.value = '';
+            try {
+                localStorage.removeItem('suaranusa_gemini_api_key');
+            } catch (e) {}
+            showToast('API Key lokal dibersihkan.', 'info');
+        }
+
+        function syncApiKeyToDev() {
+            const devKeyInput = document.getElementById('dev-api-key-input');
+            if (devKeyInput && apiKeyInput) {
+                devKeyInput.value = apiKeyInput.value;
+            }
+        }
+
+        function syncApiKeyFromDev(val) {
+            if (apiKeyInput) apiKeyInput.value = val;
+            try {
+                const trimmed = val.trim();
+                if (trimmed) {
+                    localStorage.setItem('suaranusa_gemini_api_key', trimmed);
+                } else {
+                    localStorage.removeItem('suaranusa_gemini_api_key');
+                }
+            } catch (e) {}
+        }
+
+        function toggleAccountMenu(event) {
+            if (event) event.stopPropagation();
+            const dropdown = document.getElementById('account-dropdown');
+            const btn = document.getElementById('btn-account-menu');
+            if (!dropdown) return;
+            const isHidden = dropdown.classList.contains('hidden');
+            dropdown.classList.toggle('hidden', !isHidden);
+            if (btn) btn.setAttribute('aria-expanded', String(isHidden));
+        }
+
+        function openDeveloperMenu() {
+            const dropdown = document.getElementById('account-dropdown');
+            const btn = document.getElementById('btn-account-menu');
+            const modal = document.getElementById('developer-modal');
+            if (dropdown) dropdown.classList.add('hidden');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            syncApiKeyToDev();
+            if (modal) {
+                modal.classList.remove('hidden');
+                renderIcons();
+            }
+        }
+
+        function closeDeveloperMenu() {
+            const modal = document.getElementById('developer-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function handleDeveloperBackdropClick(event) {
+            if (event.target && event.target.id === 'developer-modal') {
+                closeDeveloperMenu();
+            }
+        }
+
+        function copyDevDebugInfo() {
+            const info = [
+                'Nama: Santiago',
+                'Email: agokrip131009@gmail.com',
+                'Status: plajaj',
+                `Bahasa: ${document.getElementById('language-select')?.value || 'id-ID'}`,
+                `Gender: ${currentGender}`,
+                `Emosi: ${currentEmotion}`
+            ].join('\n');
+
+            const tempArea = document.createElement('textarea');
+            tempArea.value = info;
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Info developer disalin ke clipboard.', 'success');
+            } catch (e) {
+                showToast('Gagal menyalin info developer.', 'warning');
+            }
+            document.body.removeChild(tempArea);
+        }
+
+        document.addEventListener('click', (event) => {
+            const wrapper = document.getElementById('account-menu-wrapper');
+            const dropdown = document.getElementById('account-dropdown');
+            if (wrapper && dropdown && !wrapper.contains(event.target)) {
+                dropdown.classList.add('hidden');
+                const btn = document.getElementById('btn-account-menu');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        if (apiKeyInput) {
+            try {
+                const savedKey = localStorage.getItem('suaranusa_gemini_api_key');
+                if (savedKey) apiKeyInput.value = savedKey;
+            } catch (e) {}
+
+            apiKeyInput.addEventListener('input', () => {
+                try {
+                    const val = apiKeyInput.value.trim();
+                    if (val) {
+                        localStorage.setItem('suaranusa_gemini_api_key', val);
+                    } else {
+                        localStorage.removeItem('suaranusa_gemini_api_key');
+                    }
+                } catch (e) {}
+                syncApiKeyToDev();
+            });
+        }
+
+        // Inisialisasi Awal
+        window.addEventListener('DOMContentLoaded', () => {
+            updateVoiceTypeOptions();
+            updateTextStats();
+        });
+
+        // Fungsi Notifikasi Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                info: 'bg-slate-800 border-slate-700 text-slate-100',
+                success: 'bg-emerald-950/90 border-emerald-700 text-emerald-200',
+                error: 'bg-red-950/90 border-red-700 text-red-200',
+                warning: 'bg-amber-950/90 border-amber-700 text-amber-200'
+            };
+
+            const icons = {
+                info: 'info',
+                success: 'check-circle-2',
+                error: 'alert-circle',
+                warning: 'alert-triangle'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-sm transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type]}`;
+            toast.innerHTML = `
+                <i data-lucide="${icons[type]}" class="w-4 h-4 flex-shrink-0"></i>
+                <span class="flex-grow">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            renderIcons();
+
+            // Animasi masuk
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            // Hapus otomatis setelah 4 detik
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Memilih Jenis Kelamin
+        function selectGender(gender) {
+            currentGender = gender;
+            
+            const btnFemale = document.getElementById('btn-gender-female');
+            const btnMale = document.getElementById('btn-gender-male');
+
+            if (gender === 'female') {
+                btnFemale.className = 'gender-btn active flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-medium transition-all bg-brand-600/20 border-brand-500 text-brand-400';
+                btnMale.className = 'gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-sm font-medium transition-all';
+            } else {
+                btnMale.className = 'gender-btn active flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-medium transition-all bg-brand-600/20 border-brand-500 text-brand-400';
+                btnFemale.className = 'gender-btn flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-sm font-medium transition-all';
+            }
+
+            updateVoiceTypeOptions();
+        }
+
+        // Memperbarui Dropdown Tipe Suara sesuai Gender
+        function updateVoiceTypeOptions() {
+            const profiles = voiceProfiles[currentGender];
+            voiceTypeSelect.innerHTML = '';
+
+            profiles.forEach(profile => {
+                const option = document.createElement('option');
+                option.value = profile.id;
+                option.textContent = profile.name;
+                voiceTypeSelect.appendChild(option);
+            });
+
+            updateVoiceDescription();
+        }
+
+        // Memperbarui Deskripsi Tipe Suara
+        function updateVoiceDescription() {
+            const selectedId = voiceTypeSelect.value;
+            const profiles = voiceProfiles[currentGender];
+            const selectedProfile = profiles.find(p => p.id === selectedId);
+            if (selectedProfile) {
+                voiceDescEl.textContent = selectedProfile.desc;
+            }
+        }
+
+        voiceTypeSelect.addEventListener('change', updateVoiceDescription);
+
+        // Memilih Emosi / Vibe
+        function selectEmotion(emotion) {
+            currentEmotion = emotion;
+            const buttons = document.querySelectorAll('.emotion-btn');
+            buttons.forEach(btn => {
+                if (btn.dataset.emotion === emotion) {
+                    btn.className = 'emotion-btn active flex flex-col items-center justify-center p-3 rounded-xl border border-brand-500 bg-brand-600/20 text-brand-300 text-xs font-medium transition-all';
+                } else {
+                    btn.className = 'emotion-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200 text-xs font-medium transition-all';
+                }
+            });
+        }
+
+        // Kontrol Kecepatan Bicara
+        speedRange.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value).toFixed(1);
+            let label = 'Normal';
+            if (val < 0.9) label = 'Lambat';
+            if (val > 1.1) label = 'Cepat';
+            speedValue.textContent = `${val}x (${label})`;
+            if (audioPlayer.src) {
+                audioPlayer.playbackRate = parseFloat(val);
+            }
+        });
+
+        // Menghitung Karakter, Kata, dan Estimasi Durasi (Tanpa Batas)
+        function updateTextStats() {
+            const text = narrationInput.value;
+            const charCount = text.length;
+            const words = text.trim() === '' ? [] : text.trim().split(/\s+/);
+            const wordCount = words.length;
+            
+            // Rata-rata kecepatan baca Bahasa Indonesia sekitar 130 kata per menit
+            const estSeconds = Math.ceil((wordCount / 130) * 60);
+            
+            charCountEl.textContent = charCount.toLocaleString('id-ID');
+            wordCountEl.textContent = wordCount.toLocaleString('id-ID');
+            
+            if (estSeconds < 60) {
+                estDurationEl.textContent = `${estSeconds} dtk`;
+            } else {
+                const mins = Math.floor(estSeconds / 60);
+                const secs = estSeconds % 60;
+                estDurationEl.textContent = `${mins} mnt ${secs} dtk`;
+            }
+        }
+
+        narrationInput.addEventListener('input', updateTextStats);
+
+        // Tombol Contoh Teks
+        function insertSampleText() {
+            const samples = {
+                netral: "Selamat datang di SuaraNusa AI. Teknologi pengubah teks menjadi suara berbahasa Indonesia yang dirancang untuk membantu kebutuhan narasi video, presentasi, hingga buku audio Anda dengan kualitas jernih dan alami.",
+                ceria: "Halo semuanya! Apa kabar hari ini? Yuk, kita mulai hari ini dengan penuh semangat dan senyuman! Jangan lupa untuk selalu berkarya dan membagikan energi positif ke semua orang di sekitarmu!",
+                sedih: "Hujan turun perlahan membasahi jendela kamar, membawa kembali kenangan lama yang perlahan memudar. Terkadang, melepaskan adalah satu-satunya cara untuk menyembuhkan luka yang tak terlihat.",
+                puitis: "Di bawah langit senja yang memerah jingga, angin berbisik lembut menyampaikan rindu yang tak sempat terucap. Waktu terus berlalu, namun jejak langkahmu tetap abadi dalam relung ingatan.",
+                berwibawa: "Perhatian kepada seluruh peserta rapat. Pastikan seluruh dokumen laporan telah disiapkan sebelum sesi dimulai. Kerja sama dan kedisiplinan kita adalah kunci utama keberhasilan proyek ini.",
+                berbisik: "Sst... dengarkan baik-baik. Malam sudah semakin larut, pejamkan matamu perlahan, dan biarkan pikiranmu beristirahat dengan tenang menuju mimpi yang indah."
+            };
+
+            narrationInput.value = samples[currentEmotion] || samples.netral;
+            updateTextStats();
+            showToast('Contoh naskah sesuai emosi berhasil dimasukkan.', 'info');
+        }
+
+        // Hapus Teks
+        function clearText() {
+            narrationInput.value = '';
+            updateTextStats();
+        }
+
+        // =========================================================================
+        // LOGIKA KONVERSI TEKS KE SUARA (GEMINI TTS API) & ENCODING MP3 (LAMEJS)
+        // =========================================================================
+
+        // Fungsi Helper: Base64 ke ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // Fungsi Helper: Konversi PCM 16-bit menjadi File MP3 Asli menggunakan LameJS
+        function encodePcmToMp3(pcm16Samples, sampleRate) {
+            const channels = 1; // Mono
+            const kbps = 128; // Kualitas MP3 standar 128kbps
+            const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, kbps);
+            const mp3Data = [];
+
+            const sampleBlockSize = 1152;
+            for (let i = 0; i < pcm16Samples.length; i += sampleBlockSize) {
+                const sampleChunk = pcm16Samples.subarray(i, i + sampleBlockSize);
+                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                if (mp3buf.length > 0) {
+                    mp3Data.push(mp3buf);
+                }
+            }
+            
+            const mp3buf = mp3encoder.flush();
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+
+            return new Blob(mp3Data, { type: 'audio/mp3' });
+        }
+
+        // Fungsi Helper: Konversi PCM 16-bit menjadi WAV (Fallback yang sangat stabil di semua browser)
+        function encodePcmToWav(pcm16Samples, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcm16Samples.length * 2);
+            const view = new DataView(buffer);
+
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + pcm16Samples.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcm16Samples.length * 2, true);
+
+            let offset = 44;
+            for (let i = 0; i < pcm16Samples.length; i++, offset += 2) {
+                view.setInt16(offset, pcm16Samples[i], true);
+            }
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        // Fungsi Helper: Fetch dengan Timeout Cepat agar tidak menggantung lama
+        async function fetchWithRetry(url, options, maxRetries = 2) {
+            let delay = 500;
+            for (let i = 0; i < maxRetries; i++) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 12000);
+                try {
+                    const response = await fetch(url, { ...options, signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if (response.ok) return response;
+                    const errText = await response.text();
+                    console.warn(`API Attempt ${i + 1} failed (${response.status}):`, errText);
+                    if (response.status === 429 || response.status >= 500) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 1.5;
+                        continue;
+                    }
+                    throw new Error(`HTTP Error: ${response.status} - ${errText}`);
+                } catch (err) {
+                    clearTimeout(timeoutId);
+                    if (i === maxRetries - 1) throw err;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 1.5;
+                }
+            }
+        }
+
+        // Membangun Instruksi Gaya Bicara Berdasarkan Pilihan Pengguna
+        function buildStylePrompt(text) {
+            const lang = document.getElementById('language-select').value;
+            const emotionInstructions = {
+                netral: "Bacakan dengan nada yang alami, jelas, dan netral",
+                ceria: "Bacakan dengan nada yang sangat ceria, antusias, ramah, dan tersenyum",
+                sedih: "Bacakan dengan nada yang sedih, melankolis, pelan, dan penuh perasaan haru",
+                puitis: "Bacakan dengan gaya puitis, penuh penghayatan sastra, berirama indah, dan mendalam",
+                berwibawa: "Bacakan dengan nada yang tegas, berwibawa, profesional, dan penuh keyakinan",
+                berbisik: "Bacakan dengan suara yang sangat lembut, menenangkan, pelan, dan hangat"
+            };
+
+            let dialectNote = "dalam Bahasa Indonesia yang fasih dan alami";
+            if (lang === 'id-ID-jaksel') dialectNote = "dalam Bahasa Indonesia gaya kasual anak muda modern yang santai";
+            if (lang === 'id-ID-formal') dialectNote = "dalam Bahasa Indonesia baku seperti penyiar berita televisi";
+            if (lang === 'ms-MY') dialectNote = "dalam Bahasa Melayu yang fasih";
+            if (lang === 'en-US') dialectNote = "in clear English";
+
+            const stylePrefix = emotionInstructions[currentEmotion] || emotionInstructions.netral;
+            return `${stylePrefix} ${dialectNote}:\n\n${text}`;
+        }
+
+        // Fungsi Cadangan: Putar langsung melalui Web Audio API (Bypass blokir Blob URL pada iframe)
+        function playViaWebAudio() {
+            if (!currentPcm16) return false;
+            try {
+                if (!audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                if (webAudioSource) {
+                    try { webAudioSource.stop(); } catch (e) {}
+                }
+
+                const float32 = new Float32Array(currentPcm16.length);
+                for (let i = 0; i < currentPcm16.length; i++) {
+                    float32[i] = currentPcm16[i] / 32768.0;
+                }
+
+                const buffer = audioCtx.createBuffer(1, float32.length, currentSampleRate);
+                buffer.getChannelData(0).set(float32);
+
+                webAudioSource = audioCtx.createBufferSource();
+                webAudioSource.buffer = buffer;
+                webAudioSource.playbackRate.value = parseFloat(speedRange.value);
+                webAudioSource.connect(audioCtx.destination);
+
+                isPlayingWebAudio = true;
+                webAudioSource.onended = () => {
+                    isPlayingWebAudio = false;
+                    document.getElementById('play-pause-icon').setAttribute('data-lucide', 'play');
+                    renderIcons();
+                    visualizer.classList.add('opacity-30');
+                    Array.from(visualizer.children).forEach(bar => bar.classList.remove('wave-bar'));
+                };
+
+                webAudioSource.start(0);
+                document.getElementById('play-pause-icon').setAttribute('data-lucide', 'pause');
+                renderIcons();
+                visualizer.classList.remove('opacity-30');
+                Array.from(visualizer.children).forEach(bar => bar.classList.add('wave-bar'));
+                return true;
+            } catch (err) {
+                console.warn('Web Audio API playback error:', err);
+                return false;
+            }
+        }
+
+        // Fungsi Cadangan Akhir: Web Speech API bawaan browser jika server TTS tidak dapat diakses atau tanpa audio inline
+        function fallbackBrowserSpeech(text) {
+            if ('speechSynthesis' in window) {
+                try {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    const langVal = document.getElementById('language-select').value;
+                    utterance.lang = langVal.startsWith('id') ? 'id-ID' : (langVal === 'ms-MY' ? 'ms-MY' : 'en-US');
+                    utterance.rate = parseFloat(speedRange.value);
+                    utterance.pitch = currentGender === 'female' ? 1.15 : 0.85;
+
+                    utterance.onstart = () => {
+                        isPlayingWebAudio = true;
+                        document.getElementById('play-pause-icon').setAttribute('data-lucide', 'pause');
+                        renderIcons();
+                        visualizer.classList.remove('opacity-30');
+                        Array.from(visualizer.children).forEach(bar => bar.classList.add('wave-bar'));
+                    };
+
+                    utterance.onend = () => {
+                        isPlayingWebAudio = false;
+                        document.getElementById('play-pause-icon').setAttribute('data-lucide', 'play');
+                        renderIcons();
+                        visualizer.classList.add('opacity-30');
+                        Array.from(visualizer.children).forEach(bar => bar.classList.remove('wave-bar'));
+                    };
+
+                    window.speechSynthesis.speak(utterance);
+                    showToast('Memutar suara melalui mesin sintesis bawaan browser.', 'info');
+                } catch (speechErr) {
+                    console.warn('Web Speech API gagal:', speechErr);
+                }
+            }
+        }
+
+        // Fungsi Utama: Generate Speech
+        async function generateSpeech() {
+            const rawText = narrationInput.value.trim();
+            if (!rawText) {
+                showToast('Silakan masukkan teks narasi terlebih dahulu.', 'warning');
+                narrationInput.focus();
+                return;
+            }
+
+            if (isGenerating) return;
+            isGenerating = true;
+
+            // Inisialisasi AudioContext saat user klik tombol (syarat keamanan browser)
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // Update UI ke mode loading
+            const btnGenerate = document.getElementById('btn-generate');
+            const generateText = document.getElementById('generate-text');
+            const statusBadge = document.getElementById('audio-status-badge');
+            
+            btnGenerate.disabled = true;
+            generateText.textContent = 'Memproses Suara & MP3...';
+            statusBadge.textContent = 'Sedang Memproses...';
+            statusBadge.className = 'text-xs px-2.5 py-1 rounded-md bg-brand-500/20 text-brand-400 animate-pulse';
+
+            try {
+                // Ambil profil suara terpilih
+                const selectedId = voiceTypeSelect.value;
+                const selectedProfile = voiceProfiles[currentGender].find(p => p.id === selectedId);
+                const voiceName = selectedProfile ? selectedProfile.geminiVoice : 'Aoede';
+
+                // Siapkan prompt dengan instruksi emosi dan bahasa
+                const styledPrompt = buildStylePrompt(rawText);
+
+                const apiKey = getEffectiveApiKey(); // Gunakan API key lokal jika di-deploy ke GitHub, atau kosong di runtime Preview
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: styledPrompt }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: {
+                                    voiceName: voiceName
+                                }
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const parts = result?.candidates?.[0]?.content?.parts || [];
+                const audioPart = parts.find(
+                    p => (p.inlineData && p.inlineData.data) || (p.inline_data && p.inline_data.data)
+                );
+                const inlineAudio = audioPart?.inlineData || audioPart?.inline_data;
+                const audioBase64 = inlineAudio?.data;
+                const mimeType = inlineAudio?.mimeType || inlineAudio?.mime_type || 'audio/L16;rate=24000';
+
+                if (!audioBase64) {
+                    const finishReason = result?.candidates?.[0]?.finishReason || '';
+                    console.warn('Respons server tidak mengembalikan inline audio data:', { finishReason, result });
+                    statusBadge.textContent = 'Suara Browser';
+                    statusBadge.className = 'text-xs px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-400';
+                    btnPlayPause.disabled = false;
+                    document.getElementById('track-title').textContent = `${selectedProfile ? selectedProfile.name.split('—')[0].trim() : 'Suara'} (${currentEmotion.toUpperCase()})`;
+                    fallbackBrowserSpeech(rawText);
+                    return;
+                }
+
+                // Ekstrak sample rate dari mimeType (default 24000Hz untuk Gemini TTS)
+                const rateMatch = mimeType.match(/rate=(\d+)/);
+                const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+                currentSampleRate = sampleRate;
+
+                // Konversi Base64 -> PCM 16-bit Array
+                const pcmBuffer = base64ToArrayBuffer(audioBase64);
+                const pcm16 = new Int16Array(pcmBuffer);
+                currentPcm16 = pcm16;
+                
+                // Coba Encoding ke MP3 menggunakan LameJS, fallback ke WAV jika gagal
+                try {
+                    if (typeof lamejs !== 'undefined') {
+                        currentAudioBlob = encodePcmToMp3(pcm16, sampleRate);
+                        currentAudioExt = 'mp3';
+                    } else {
+                        throw new Error('LameJS tidak termuat');
+                    }
+                } catch (mp3Err) {
+                    console.warn('Gagal encode MP3, beralih ke WAV:', mp3Err);
+                    currentAudioBlob = encodePcmToWav(pcm16, sampleRate);
+                    currentAudioExt = 'wav';
+                }
+
+                // Perbarui URL dan aktifkan tombol pemutar serta tombol unduh
+                if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+                currentAudioUrl = URL.createObjectURL(currentAudioBlob);
+                audioPlayer.src = currentAudioUrl;
+                audioPlayer.playbackRate = parseFloat(speedRange.value);
+
+                btnPlayPause.disabled = false;
+                btnDownloadMp3.disabled = false;
+                document.getElementById('track-title').textContent = `${selectedProfile ? selectedProfile.name.split('—')[0].trim() : 'Suara'} (${currentEmotion.toUpperCase()})`;
+                statusBadge.textContent = `Siap (${currentAudioExt.toUpperCase()})`;
+                statusBadge.className = 'text-xs px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400';
+
+                // Putar hasil audio (coba HTML5 Audio dulu, jika gagal/diblokir langsung gunakan Web Audio API)
+                try {
+                    await audioPlayer.play();
+                    showToast('Suara berhasil dibuat dan sedang diputar!', 'success');
+                } catch (playError) {
+                    console.warn('HTML5 Audio diblokir, beralih ke Web Audio API:', playError);
+                    const webAudioOk = playViaWebAudio();
+                    if (webAudioOk) {
+                        showToast('Suara berhasil dibuat dan diputar!', 'success');
+                    } else {
+                        showToast('Suara siap! Klik tombol Play (▶) pada pemutar audio.', 'info');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error generating TTS:', error);
+                statusBadge.textContent = 'Mode Cadangan';
+                statusBadge.className = 'text-xs px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-400';
+                fallbackBrowserSpeech(rawText);
+            } finally {
+                isGenerating = false;
+                btnGenerate.disabled = false;
+                generateText.textContent = 'Buat & Putar Suara';
+            }
+        }
+
+        // =========================================================================
+        // KONTROL PEMUTAR AUDIO & UNDUH MP3 KE PENYIMPANAN INTERNAL
+        // =========================================================================
+
+        function toggleAudioPlayback() {
+            if (isPlayingWebAudio && webAudioSource) {
+                try { webAudioSource.stop(); } catch (e) {}
+                isPlayingWebAudio = false;
+                document.getElementById('play-pause-icon').setAttribute('data-lucide', 'play');
+                renderIcons();
+                visualizer.classList.add('opacity-30');
+                Array.from(visualizer.children).forEach(bar => bar.classList.remove('wave-bar'));
+                return;
+            }
+
+            if (!audioPlayer.src) {
+                if (currentPcm16) playViaWebAudio();
+                return;
+            }
+
+            if (audioPlayer.paused) {
+                audioPlayer.play().catch(() => {
+                    playViaWebAudio();
+                });
+            } else {
+                audioPlayer.pause();
+            }
+        }
+
+        // Format waktu detik ke MM:SS
+        function formatTime(seconds) {
+            if (isNaN(seconds) || !isFinite(seconds)) return '00:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Event Listeners untuk Audio Player
+        audioPlayer.addEventListener('play', () => {
+            document.getElementById('play-pause-icon').setAttribute('data-lucide', 'pause');
+            renderIcons();
+            visualizer.classList.remove('opacity-30');
+            Array.from(visualizer.children).forEach(bar => bar.classList.add('wave-bar'));
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            document.getElementById('play-pause-icon').setAttribute('data-lucide', 'play');
+            renderIcons();
+            visualizer.classList.add('opacity-30');
+            Array.from(visualizer.children).forEach(bar => bar.classList.remove('wave-bar'));
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            document.getElementById('play-pause-icon').setAttribute('data-lucide', 'play');
+            renderIcons();
+            progressBar.style.width = '0%';
+            visualizer.classList.add('opacity-30');
+            Array.from(visualizer.children).forEach(bar => bar.classList.remove('wave-bar'));
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            const current = audioPlayer.currentTime;
+            const duration = audioPlayer.duration;
+            audioTimeEl.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+            if (duration > 0) {
+                const percent = (current / duration) * 100;
+                progressBar.style.width = `${percent}%`;
+            }
+        });
+
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            audioTimeEl.textContent = `00:00 / ${formatTime(audioPlayer.duration)}`;
+        });
+
+        // Klik pada progress bar untuk lompat durasi
+        function seekAudio(event) {
+            if (!audioPlayer.src || !audioPlayer.duration) return;
+            const container = document.getElementById('progress-container');
+            const rect = container.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const percentage = clickX / rect.width;
+            audioPlayer.currentTime = percentage * audioPlayer.duration;
+        }
+
+        // Fungsi Unduh File MP3 langsung ke Penyimpanan Internal Perangkat
+        function downloadAsMp3() {
+            if (!currentAudioBlob || !currentAudioUrl) {
+                showToast('Belum ada file audio yang siap diunduh.', 'warning');
+                return;
+            }
+
+            // Buat nama file yang rapi dengan timestamp
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+            const genderLabel = currentGender === 'female' ? 'Wanita' : 'Pria';
+            const fileName = `SuaraNusa_${genderLabel}_${currentEmotion}_${timestamp}.${currentAudioExt}`;
+
+            // Memicu pengunduhan ke folder Download / Penyimpanan Internal perangkat
+            const downloadLink = document.createElement('a');
+            downloadLink.href = currentAudioUrl;
+            downloadLink.download = fileName;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+
+            showToast(`Mengunduh ${fileName} ke penyimpanan internal Anda...`, 'success');
+        }
+    </script>
+</body>
+</html>
